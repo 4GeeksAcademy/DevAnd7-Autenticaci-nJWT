@@ -4,25 +4,28 @@ export const Private = () => {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const token = sessionStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
 
-        if (!token) {
-            window.location.href = "/login";
-            return;
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    fetch(import.meta.env.VITE_BACKEND_URL + "/api/private", {
+        method: "GET",
+        mode: "cors",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
         }
-
-        fetch(import.meta.env.VITE_BACKEND_URL + "/api/private", {
-            headers: {
-                Authorization: "Bearer " + token
-            }
+    })
+        .then(resp => {
+            if (!resp.ok) throw new Error("Unauthorized");
+            return resp.json();
         })
-            .then(resp => {
-                if (!resp.ok) throw new Error("Unauthorized");
-                return resp.json();
-            })
-            .then(data => setUser(data.user))
-            .catch(() => window.location.href = "/login");
-    }, []);
+        .then(data => setUser(data.user))
+        .catch(() => window.location.href = "/login");
+}, []);
 
     return (
         <div className="container mt-5">
