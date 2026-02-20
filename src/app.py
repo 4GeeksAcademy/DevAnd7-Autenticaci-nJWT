@@ -3,14 +3,26 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 import os
 from flask import Flask, request, jsonify, url_for, send_from_directory
-from flask_migrate import Migrate
+try:
+    from flask_migrate import Migrate
+except Exception:
+    Migrate = None
 from flask_swagger import swagger
 from api.utils import APIException, generate_sitemap
 from api.models import db
 from flask_jwt_extended import JWTManager
 from api.routes import api
-from api.admin import setup_admin
-from api.commands import setup_commands
+try:
+    from api.admin import setup_admin
+except Exception:
+    def setup_admin(app):
+        return None
+
+try:
+    from api.commands import setup_commands
+except Exception:
+    def setup_commands(app):
+        return None
 
 # from models import Person
 
@@ -29,7 +41,13 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-MIGRATE = Migrate(app, db, compare_type=True)
+try:
+    if Migrate is not None:
+        MIGRATE = Migrate(app, db, compare_type=True)
+    else:
+        MIGRATE = None
+except Exception:
+    MIGRATE = None
 db.init_app(app)
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 jwt = JWTManager(app)
@@ -60,6 +78,8 @@ def sitemap():
     return send_from_directory(static_file_dir, 'index.html')
 
 # any other endpoint will try to serve it like a static file
+
+
 @app.route('/<path:path>', methods=['GET'])
 def serve_any_other_file(path):
     if not os.path.isfile(os.path.join(static_file_dir, path)):

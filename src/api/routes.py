@@ -54,7 +54,7 @@ def login():
     if not user:
         return jsonify({"msg": "Bad email or password"}), 401
 
-    token = create_access_token(identity=user.id)
+    token = create_access_token(identity=user.email)
 
     return jsonify({
         "token": token,
@@ -65,8 +65,8 @@ def login():
 @api.route('/private', methods=['GET'])
 @jwt_required()
 def private():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
 
     return jsonify({
         "msg": "Access granted",
